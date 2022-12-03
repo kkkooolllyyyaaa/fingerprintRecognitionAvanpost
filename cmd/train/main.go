@@ -37,7 +37,7 @@ func main() {
 	// run train application
 	erg.Go(func() error {
 		logger.Info(ctx).Msg("Running application...")
-		return app.Run(ctx, erg)
+		return app.RunTrain(ctx, erg)
 	})
 
 	// handle errors
