@@ -11,20 +11,20 @@ import (
 	"sync/atomic"
 )
 
-type Worker struct {
+type BmpWorker struct {
 	fileRoot string
 	FilesCnt int32
 }
 
-func New(fileRoot string) *Worker {
-	return &Worker{
+func NewBmpWorker(fileRoot string) *BmpWorker {
+	return &BmpWorker{
 		fileRoot: fileRoot,
 		FilesCnt: 0,
 	}
 }
 
-func (w *Worker) ExtractFilePaths(ctx context.Context, fileNames []chan string, workersCnt int) error {
-	filePathErr := filepath.Walk(w.fileRoot, func(path string, info os.FileInfo, err error) error {
+func (bw *BmpWorker) ExtractFilePaths(ctx context.Context, fileNames []chan string, workersCnt int) error {
+	filePathErr := filepath.Walk(bw.fileRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return errors.Wrap(err, "Walk incoming error")
 		}
@@ -33,7 +33,7 @@ func (w *Worker) ExtractFilePaths(ctx context.Context, fileNames []chan string, 
 			return nil
 		}
 
-		atomic.AddInt32(&w.FilesCnt, 1)
+		atomic.AddInt32(&bw.FilesCnt, 1)
 
 		fileName := info.Name()
 		personIndex := ExtractNumberFromFileName(fileName)
@@ -46,7 +46,7 @@ func (w *Worker) ExtractFilePaths(ctx context.Context, fileNames []chan string, 
 	return filePathErr
 }
 
-func (w *Worker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- image.Image) error {
+func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- image.Image) error {
 	for {
 		select {
 
@@ -55,7 +55,7 @@ func (w *Worker) ReadImages(ctx context.Context, fileNamesChan <-chan string, im
 				continue
 			}
 
-			img, err := w.decodeToBmp(fileName)
+			img, err := bw.ExtractImage(fileName)
 			if err != nil {
 				return errors.Wrap(err, "Binarization")
 			}
@@ -71,8 +71,8 @@ func (w *Worker) ReadImages(ctx context.Context, fileNamesChan <-chan string, im
 	}
 }
 
-func (w *Worker) decodeToBmp(path string) (image.Image, error) {
-	filePath := w.fileRoot + path
+func (bw *BmpWorker) ExtractImage(path string) (image.Image, error) {
+	filePath := bw.fileRoot + path
 
 	file, err := os.Open(filePath)
 	if err != nil {

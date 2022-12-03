@@ -25,7 +25,7 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) error {
 		fileNamesChannels[i] = make(chan string, FileNamesChannelBufferSize)
 	}
 
-	fileWorker := file.New(fileRoot)
+	fileWorker := file.NewBmpWorker(fileRoot)
 	erg.Go(func() error {
 		err := fileWorker.ExtractFilePaths(ctx, fileNamesChannels, WorkersCnt)
 		for i := range fileNamesChannels {
@@ -60,32 +60,3 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) error {
 
 	return nil
 }
-
-//func SetupRouter(service currency.Service) *gin.Engine {
-//	/**
-//	@description Init Router
-//	*/
-//	router := gin.Default()
-//	/**
-//	@description Setup Mode Application
-//	*/
-//	gin.SetMode(gin.ReleaseMode)
-//
-//	/**
-//	@description Setup Middleware
-//	*/
-//	router.Use(cors.New(cors.Config{
-//		AllowOrigins:  []string{"*"},
-//		AllowMethods:  []string{"*"},
-//		AllowHeaders:  []string{"*"},
-//		AllowWildcard: true,
-//	}))
-//	router.Use(helmet.Default())
-//	router.Use(gzip.Gzip(gzip.BestCompression))
-//	/**
-//	@description Init All Route
-//	*/
-//	route.InitCurrencyRoutes(service, router)
-//
-//	return route
-//}

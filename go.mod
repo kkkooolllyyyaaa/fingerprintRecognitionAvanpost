@@ -3,6 +3,10 @@ module fingerprintRecognitionAvanpost
 go 1.19
 
 require (
+	github.com/danielkov/gin-helmet v0.0.0-20171108135313-1387e224435e
+	github.com/gin-contrib/cors v1.4.0
+	github.com/gin-contrib/gzip v0.0.6
+	github.com/gin-contrib/size v0.0.0-20220829131622-0fc0bc875336
 	github.com/gin-gonic/gin v1.8.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.28.0
