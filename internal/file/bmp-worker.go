@@ -1,25 +1,77 @@
 package file
 
 import (
+	"context"
+	"fingerprintRecognitionAvanpost/pkg/logger"
 	"github.com/pkg/errors"
 	"golang.org/x/image/bmp"
-	"image/color"
+	"image"
 	"os"
+	"path/filepath"
+	"sync/atomic"
 )
 
 type Worker struct {
 	fileRoot string
+	FilesCnt int32
 }
 
 func New(fileRoot string) *Worker {
 	return &Worker{
 		fileRoot: fileRoot,
+		FilesCnt: 0,
 	}
 }
 
-const TopLeftOffset = 4
+func (w *Worker) ExtractFilePaths(ctx context.Context, fileNames []chan string, workersCnt int) error {
+	filePathErr := filepath.Walk(w.fileRoot, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return errors.Wrap(err, "Walk incoming error")
+		}
 
-func (w *Worker) ReadToBitset(path string) (*Bitset, error) {
+		if info.IsDir() {
+			return nil
+		}
+
+		atomic.AddInt32(&w.FilesCnt, 1)
+
+		fileName := info.Name()
+		personIndex := ExtractNumberFromFileName(fileName)
+		calculatedChan := fileNames[personIndex%workersCnt]
+		calculatedChan <- fileName
+		logger.Info(ctx).Msgf("Wrote %s to %d chan, curSize=%d", fileName, personIndex%workersCnt, len(calculatedChan))
+		return nil
+	})
+
+	return filePathErr
+}
+
+func (w *Worker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- image.Image) error {
+	for {
+		select {
+
+		case fileName := <-fileNamesChan:
+			if isBadFilename(fileName) {
+				continue
+			}
+
+			img, err := w.decodeToBmp(fileName)
+			if err != nil {
+				return errors.Wrap(err, "Binarization")
+			}
+
+			logger.Info(ctx).Msgf("Wrote img %s", fileName)
+			imagesChan <- img
+
+		case <-ctx.Done():
+			logger.Warn(ctx).Msg("ReadImages context done")
+			return ctx.Err()
+
+		}
+	}
+}
+
+func (w *Worker) decodeToBmp(path string) (image.Image, error) {
 	filePath := w.fileRoot + path
 
 	file, err := os.Open(filePath)
@@ -27,37 +79,14 @@ func (w *Worker) ReadToBitset(path string) (*Bitset, error) {
 		return nil, errors.Wrap(err, "opening file")
 	}
 
-	image, err := bmp.Decode(file)
+	img, err := bmp.Decode(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "decoding bmp")
 	}
 
-	bounds := image.Bounds()
-	minX := bounds.Min.X
-	maxX := bounds.Max.X - TopLeftOffset
-	minY := bounds.Min.Y
-	maxY := bounds.Max.Y - TopLeftOffset
-
-	bitset := NewZeroes(maxY-minY, maxX-minX)
-	for i := minY; i < maxY; i++ {
-		for j := minX; j < maxX; j++ {
-			r, g, b := normalizeColor(image.At(j, i))
-			bitset.Bin[i][j] = binarizeRgb(r, g, b)
-		}
+	if err = file.Close(); err != nil {
+		return nil, errors.Wrap(err, "File close error")
 	}
 
-	return bitset, nil
-}
-
-const NormalizeK = 256
-
-func normalizeColor(c color.Color) (r, g, b uint32) {
-	r, g, b, _ = c.RGBA()
-	return r / NormalizeK, g / NormalizeK, b / NormalizeK
-}
-
-const WhiteThreshold = 30
-
-func binarizeRgb(r, g, b uint32) bool {
-	return r <= WhiteThreshold && g <= WhiteThreshold && b <= WhiteThreshold
+	return img, nil
 }

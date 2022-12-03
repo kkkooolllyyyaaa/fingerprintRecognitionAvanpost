@@ -3,37 +3,89 @@ package app
 import (
 	"context"
 	"fingerprintRecognitionAvanpost/internal/file"
-	"fingerprintRecognitionAvanpost/internal/services"
+	"fingerprintRecognitionAvanpost/internal/preprocess"
 	"golang.org/x/sync/errgroup"
-	"log"
-	"os"
-	"path/filepath"
+	"image"
+	"sync"
 )
 
-func Run(ctx context.Context, erg *errgroup.Group) error {
-	// Сюда нужно поместить 1 файл
-	fileRoot := "files/train/SOCOFing/OneImage/"
+const WorkersCnt = 4
+const FileNamesChannelBufferSize = 10
+const ImagesChannelBufferSize = 100
+const PreprocessedChannelBufferSize = 6000
+
+func RunTrain(ctx context.Context, erg *errgroup.Group) error {
+	//fileRoot := "files/train/SOCOFing/OneImage/"
 	//fileRoot := "files/train/SOCOFing/TenPeople/"
-	//fileRoot := "files/train/SOCOFing/Real/"
+	fileRoot := "files/train/SOCOFing/Real/"
 	//fileRoot := "files/train/SOCOFing/Altered/Altered-Hard/"
 
-	filepath.Walk(fileRoot, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
+	fileNamesChannels := make([]chan string, WorkersCnt)
+	for i := range fileNamesChannels {
+		fileNamesChannels[i] = make(chan string, FileNamesChannelBufferSize)
+	}
 
-		if info.IsDir() {
-			return nil
+	fileWorker := file.New(fileRoot)
+	erg.Go(func() error {
+		err := fileWorker.ExtractFilePaths(ctx, fileNamesChannels, WorkersCnt)
+		for i := range fileNamesChannels {
+			close(fileNamesChannels[i])
 		}
-		fileWorker := file.New(fileRoot)
-		bitset, err := fileWorker.ReadToBitset(info.Name())
-		bitset.Print()
-		services.Skeleton(bitset.Bin)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-		bitset.Print()
-		return nil
+		return err
 	})
+
+	imagesChannel := make(chan image.Image, ImagesChannelBufferSize)
+	var wg sync.WaitGroup
+	wg.Add(WorkersCnt)
+
+	for j := 0; j < WorkersCnt; j++ {
+		neededChan := fileNamesChannels[j]
+		erg.Go(func() error {
+			err := fileWorker.ReadImages(ctx, neededChan, imagesChannel)
+			wg.Done()
+			return err
+		})
+	}
+
+	go func() {
+		wg.Wait()
+		close(imagesChannel)
+	}()
+
+	preprocessedChannel := make(chan *preprocess.Bitset, PreprocessedChannelBufferSize)
+	erg.Go(func() error {
+		defer close(preprocessedChannel)
+		return preprocess.PreprocessImages(ctx, imagesChannel, preprocessedChannel)
+	})
+
 	return nil
 }
+
+//func SetupRouter(service currency.Service) *gin.Engine {
+//	/**
+//	@description Init Router
+//	*/
+//	router := gin.Default()
+//	/**
+//	@description Setup Mode Application
+//	*/
+//	gin.SetMode(gin.ReleaseMode)
+//
+//	/**
+//	@description Setup Middleware
+//	*/
+//	router.Use(cors.New(cors.Config{
+//		AllowOrigins:  []string{"*"},
+//		AllowMethods:  []string{"*"},
+//		AllowHeaders:  []string{"*"},
+//		AllowWildcard: true,
+//	}))
+//	router.Use(helmet.Default())
+//	router.Use(gzip.Gzip(gzip.BestCompression))
+//	/**
+//	@description Init All Route
+//	*/
+//	route.InitCurrencyRoutes(service, router)
+//
+//	return route
+//}
