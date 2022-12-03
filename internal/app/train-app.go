@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fingerprintRecognitionAvanpost/internal/file"
+	"fingerprintRecognitionAvanpost/internal/services"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
@@ -26,6 +27,8 @@ func Run(ctx context.Context, erg *errgroup.Group) error {
 		}
 		fileWorker := file.New(fileRoot)
 		bitset, err := fileWorker.ReadToBitset(info.Name())
+		bitset.Print()
+		services.Skeleton(bitset.Bin)
 		if err != nil {
 			log.Fatalf(err.Error())
 		}

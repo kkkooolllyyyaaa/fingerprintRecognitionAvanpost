@@ -1,18 +1,11 @@
 package services
 
-type Bitset struct {
-	width  int
-	height int
-	bin    [][]bool
-}
-
 func Skeleton(bin [][]bool) {
-	matrix := bin
 	wasChanged := true
 
 	for wasChanged {
-		st1 := iterate(1, matrix)
-		st2 := iterate(2, matrix)
+		st1 := iterate(1, bin)
+		st2 := iterate(2, bin)
 
 		wasChanged = st1 == 0 && st2 == 0
 	}
@@ -21,7 +14,7 @@ func Skeleton(bin [][]bool) {
 func iterate(stepNum int8, matrix [][]bool) int {
 	step := make([][]int, 0)
 	for i := 1; i < len(matrix)-1; i++ {
-		for j := 1; j < len(matrix)-1; j++ {
+		for j := 1; j < len(matrix[i])-1; j++ {
 			if matrix[i][j] {
 				local := locality(matrix, i, j)
 				prm1, prm2 := params(local)
