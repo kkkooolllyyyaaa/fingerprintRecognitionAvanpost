@@ -16,8 +16,8 @@ const ImagesChannelBufferSize = 20
 const PreprocessedChannelBufferSize = 20
 
 func RunTrain(ctx context.Context, erg *errgroup.Group) error {
-	fileRoot := "files/train/SOCOFing/OneImage/"
-	//fileRoot := "files/train/SOCOFing/OneImageTwo/"
+	//fileRoot := "files/train/SOCOFing/OneImage/"
+	fileRoot := "files/train/SOCOFing/OneImageTwo/"
 
 	//fileRoot := "files/train/SOCOFing/TenPeople/"
 	//fileRoot := "files/train/SOCOFing/Real/"
@@ -39,7 +39,7 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) error {
 		return err
 	})
 
-	imagesChannel := make(chan image.Image, ImagesChannelBufferSize)
+	imagesChannel := make(chan *image.Gray, ImagesChannelBufferSize)
 	var wg sync.WaitGroup
 	wg.Add(WorkersCnt)
 

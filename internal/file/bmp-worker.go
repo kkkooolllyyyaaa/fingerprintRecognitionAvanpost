@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/image/bmp"
 	"image"
+	"image/draw"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -48,7 +49,7 @@ func (bw *BmpWorker) ExtractFilePaths(ctx context.Context, fileNames []chan stri
 	return filePathErr
 }
 
-func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- image.Image) error {
+func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- *image.Gray) error {
 	for {
 		select {
 
@@ -81,7 +82,7 @@ func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string
 	}
 }
 
-func (bw *BmpWorker) ExtractImage(path string) (image.Image, error) {
+func (bw *BmpWorker) ExtractImage(path string) (*image.Gray, error) {
 	filePath := bw.fileRoot + path
 
 	file, err := os.Open(filePath)
@@ -94,11 +95,14 @@ func (bw *BmpWorker) ExtractImage(path string) (image.Image, error) {
 		return nil, errors.Wrap(err, "decoding bmp")
 	}
 
+	result := image.NewGray(img.Bounds())
+	draw.Draw(result, result.Bounds(), img, img.Bounds().Min, draw.Src)
+
 	if err = file.Close(); err != nil {
 		return nil, errors.Wrap(err, "File close error")
 	}
 
-	return img, nil
+	return result, nil
 }
 
 //func (bw *BmpWorker) WriteToBmp(bitset *preprocess.Bitset) error {

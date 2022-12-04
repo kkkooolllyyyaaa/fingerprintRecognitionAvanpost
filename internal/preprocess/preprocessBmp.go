@@ -3,6 +3,7 @@ package preprocess
 import (
 	"context"
 	"fingerprintRecognitionAvanpost/internal/services"
+	"fingerprintRecognitionAvanpost/internal/threshold"
 	"fingerprintRecognitionAvanpost/pkg/logger"
 	"github.com/pkg/errors"
 	"golang.org/x/image/bmp"
@@ -10,7 +11,7 @@ import (
 	"os"
 )
 
-func PreprocessImages(ctx context.Context, images chan image.Image, datas chan *Data) error {
+func PreprocessImages(ctx context.Context, images chan *image.Gray, datas chan *Data) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -34,8 +35,10 @@ func PreprocessImages(ctx context.Context, images chan image.Image, datas chan *
 	}
 }
 
-func PreprocessOne(ctx context.Context, image image.Image) (*Data, error) {
-	bitset, err := toBitset(image)
+func PreprocessOne(ctx context.Context, img *image.Gray) (*Data, error) {
+	WhiteThreshold = threshold.OtsuThresholdValue(img)
+	img, err := threshold.OtsuThreshold(img, threshold.ThreshBinary)
+	bitset, err := toBitset(img)
 	if err != nil {
 		logger.Error(ctx).Err(err).Msg("Got error while converting to bitset")
 		return nil, errors.Wrap(err, "toBitset")
