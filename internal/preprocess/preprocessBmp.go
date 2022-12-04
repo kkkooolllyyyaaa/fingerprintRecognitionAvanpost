@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-func PreprocessImages(ctx context.Context, images chan *myimage.MyImage, datas chan *Data) error {
+func PreprocessImages(ctx context.Context, images chan *myimage.MyImage, datas chan *Data, write bool) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -24,7 +24,7 @@ func PreprocessImages(ctx context.Context, images chan *myimage.MyImage, datas c
 				return nil
 			}
 
-			preprocessed, err := PreprocessOne(ctx, img)
+			preprocessed, err := PreprocessOne(ctx, img, write)
 			if err != nil {
 				logger.Error(ctx).Err(err).Msg("Got error while preprocessing")
 				return errors.Wrap(err, "Preprocess one")
@@ -36,19 +36,23 @@ func PreprocessImages(ctx context.Context, images chan *myimage.MyImage, datas c
 	}
 }
 
-func PreprocessOne(ctx context.Context, img *myimage.MyImage) (*Data, error) {
-	WhiteThreshold = threshold.OtsuThresholdValue(img.Img)
-	temp, err := threshold.OtsuThreshold(img.Img, threshold.ThreshBinary)
-	img.Img = temp
+func PreprocessOne(ctx context.Context, img *myimage.MyImage, write bool) (*Data, error) {
+	WhiteThreshold = threshold.OtsuThresholdValue(img.Img) / 2
+	//temp, err := threshold.OtsuThreshold(img.Img, threshold.ThreshBinary)
+	//img.Img = temp
 	bitset, err := toBitset(img.Img)
 	if err != nil {
 		logger.Error(ctx).Err(err).Msg("Got error while converting to bitset")
 		return nil, errors.Wrap(err, "toBitset")
 	}
-	//_ = WriteBmp(bitset, "before-no-blik.bmp")
+	if write {
+		_ = WriteBmp(bitset, img.Filename)
+	}
 
 	services.Skeleton(bitset.Bin)
-	//_ = WriteBmp(bitset, "after-no-blik.bmp")
+	if write {
+		_ = WriteBmp(bitset, "skeleton_"+img.Filename)
+	}
 
 	counted, _ := services.DefineDots(bitset.Bin)
 

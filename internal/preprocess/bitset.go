@@ -29,7 +29,7 @@ func (b *Bitset) Print() {
 	for i := 0; i < b.H; i++ {
 		for j := 0; j < b.W; j++ {
 			if b.Bin[i][j] {
-				fmt.Print(".")
+				fmt.Print("*")
 			} else {
 				fmt.Print(" ")
 			}

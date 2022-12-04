@@ -75,7 +75,7 @@ func extractFile(ctx *gin.Context) (multipart.File, error) {
 func preprocessToData(ctx context.Context, img image.Image) (*preprocess.Data, error) {
 	gray := file.ToGray(img)
 	myImg := myimage.NewMyImage(gray, "filename")
-	preprocessedData, err := preprocess.PreprocessOne(ctx, myImg)
+	preprocessedData, err := preprocess.PreprocessOne(ctx, myImg, false)
 	if err != nil {
 		return nil, err
 	}

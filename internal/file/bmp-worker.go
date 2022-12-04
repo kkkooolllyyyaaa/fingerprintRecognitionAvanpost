@@ -4,6 +4,7 @@ import (
 	"context"
 	"fingerprintRecognitionAvanpost/internal/myimage"
 	"fingerprintRecognitionAvanpost/pkg/logger"
+	"github.com/nfnt/resize"
 	"github.com/pkg/errors"
 	"golang.org/x/image/bmp"
 	"os"
@@ -78,6 +79,9 @@ func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string
 	}
 }
 
+const XSize = 92
+const YSize = 99
+
 func (bw *BmpWorker) ExtractImage(filename string) (*myimage.MyImage, error) {
 	filePath := bw.fileRoot + filename
 
@@ -90,6 +94,8 @@ func (bw *BmpWorker) ExtractImage(filename string) (*myimage.MyImage, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "decoding bmp")
 	}
+
+	img = resize.Resize(XSize, YSize, img, resize.Lanczos3)
 
 	if err = file.Close(); err != nil {
 		return nil, errors.Wrap(err, "File close error")

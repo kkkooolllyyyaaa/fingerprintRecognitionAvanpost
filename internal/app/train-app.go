@@ -10,20 +10,13 @@ import (
 	"sync"
 )
 
-const WorkersCnt = 4
-const FileNamesChannelBufferSize = 20
-const ImagesChannelBufferSize = 20
-const PreprocessedChannelBufferSize = 20
+const WorkersCnt = 32
+const FileNamesChannelBufferSize = 1024
+const ImagesChannelBufferSize = 128
+const PreprocessedChannelBufferSize = 128
 
 func RunTrain(ctx context.Context, erg *errgroup.Group) []*preprocess.Data {
-	//fileRoot := "files/train/SOCOFing/OneImage/"
-	//fileRoot := "files/train/SOCOFing/OneImageTwo/"
-	//fileRoot := "files/train/SOCOFing/Blik/"
-	//fileRoot := "files/train/SOCOFing/NoBlik/"
-
-	fileRoot := "files/train/SOCOFing/TenPeople/"
-	//fileRoot := "files/train/SOCOFing/Real/"
-	//fileRoot := "files/train/SOCOFing/Altered/Altered-Hard/"
+	fileRoot := "files/train/SOCOFing/Real/"
 
 	fileNamesChannels := make([]chan string, WorkersCnt)
 	for i := range fileNamesChannels {
@@ -65,7 +58,7 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) []*preprocess.Data {
 
 	preprocessedChannel := make(chan *preprocess.Data, PreprocessedChannelBufferSize)
 	erg.Go(func() error {
-		err := preprocess.PreprocessImages(ctx, imagesChannel, preprocessedChannel)
+		err := preprocess.PreprocessImages(ctx, imagesChannel, preprocessedChannel, false)
 		close(preprocessedChannel)
 		logger.Info(ctx).Msg("Done preprocessing images")
 		return err

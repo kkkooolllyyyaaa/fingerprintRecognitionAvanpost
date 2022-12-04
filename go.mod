@@ -8,15 +8,14 @@ require (
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-contrib/size v0.0.0-20220829131622-0fc0bc875336
 	github.com/gin-gonic/gin v1.8.1
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.28.0
-	gocv.io/x/gocv v0.31.0
 	golang.org/x/image v0.1.0
 	golang.org/x/sync v0.1.0
 )
 
 require (
-	github.com/ernyoke/imger v0.1.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect

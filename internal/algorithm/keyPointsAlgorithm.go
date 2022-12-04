@@ -51,3 +51,7 @@ func dispersionForKeyPoints(first *preprocess.Data, second *preprocess.Data) int
 func dispersionBetween(first, second int) int64 {
 	return int64((first - second) * (first - second))
 }
+
+//func dispersionBetween(first, second int) int64 {
+//	return int64(math.Abs(float64(first - second)))
+//}

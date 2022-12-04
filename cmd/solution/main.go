@@ -38,18 +38,6 @@ func main() {
 		return nil
 	})
 
-	//// run train application
-	//wg := sync.WaitGroup{}
-	//wg.Add(1)
-	//erg.Go(func() error {
-	//	logger.Info(ctx).Msg("Running train application...")
-	//	trainErr := app.RunTrain(ctx, erg, allData)
-	//	logger.Info(ctx).Msg("Train done")
-	//	wg.Done()
-	//	return trainErr
-	//})
-	//wg.Wait()
-
 	// run train application
 	logger.Info(ctx).Msg("Running train application...")
 	allData := app.RunTrain(ctx, erg)
@@ -59,6 +47,12 @@ func main() {
 	erg.Go(func() error {
 		logger.Info(ctx).Msg("Running test application...")
 		return app.RunTest(ctx, erg, server, allData)
+	})
+
+	// run check application
+	erg.Go(func() error {
+		logger.Info(ctx).Msg("Running check application...")
+		return app.RunCheck(ctx, erg, allData)
 	})
 
 	// handle errors
