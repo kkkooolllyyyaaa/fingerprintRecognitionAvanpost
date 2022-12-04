@@ -1,6 +1,10 @@
 package preprocess
 
-import "fmt"
+import (
+	"fmt"
+	"image"
+	"image/color"
+)
 
 type Bitset struct {
 	H   int // y
@@ -21,36 +25,48 @@ func NewZeroes(height, width int) *Bitset {
 	}
 }
 
-func (b *Bitset) Print() {
-	for i := 0; i < b.H; i++ {
-		for j := 0; j < b.W; j++ {
-			if b.Bin[i][j] {
-				fmt.Print(".")
-			} else {
-				fmt.Print(" ")
-			}
-		}
-		fmt.Println()
+type BlackWhiteColor struct {
+	isBlack bool
+}
+
+func (bwColor *BlackWhiteColor) RGBA() (r, g, b, a uint32) {
+	if bwColor.isBlack {
+		return 0 * NormalizeK, 0 * NormalizeK, 0 * NormalizeK, 255 * NormalizeK
+	}
+	return 255 * NormalizeK, 255 * NormalizeK, 255 * NormalizeK, 255 * NormalizeK
+}
+
+type BlackWhiteColorModel struct{}
+
+func (bwColorModel *BlackWhiteColorModel) Convert(c color.Color) color.Color {
+	return c
+}
+
+// ColorModel returns the Image's color model.
+func (bitset *Bitset) ColorModel() color.Model {
+	return &BlackWhiteColorModel{}
+}
+
+// Bounds returns the domain for which At can return non-zero color.
+// The bounds do not necessarily contain the point (0, 0).
+func (bitset *Bitset) Bounds() image.Rectangle {
+	return image.Rect(0, 0, bitset.W, bitset.H)
+}
+
+// At returns the color of the pixel at (x, y).
+// At(Bounds().Min.X, Bounds().Min.Y) returns the upper-left pixel of the grid.
+// At(Bounds().Max.X-1, Bounds().Max.Y-1) returns the lower-right one.
+func (bitset *Bitset) At(x, y int) color.Color {
+	return &BlackWhiteColor{
+		isBlack: bitset.Bin[y][x],
 	}
 }
 
-func (b *Bitset) PrintWithDots(dots [][]int) {
-	for i := 0; i < b.H; i++ {
-		for j := 0; j < b.W; j++ {
-			if b.Bin[i][j] {
-
-				isDot := false
-				for k := 0; k < len(dots[0]); k++ {
-					if dots[0][k] == i && dots[1][k] == j {
-						isDot = true
-						break
-					}
-				}
-				if isDot {
-					fmt.Print("*")
-				} else {
-					fmt.Print(".")
-				}
+func (bitset *Bitset) Print() {
+	for i := 0; i < bitset.H; i++ {
+		for j := 0; j < bitset.W; j++ {
+			if bitset.Bin[i][j] {
+				fmt.Print("*")
 			} else {
 				fmt.Print(" ")
 			}

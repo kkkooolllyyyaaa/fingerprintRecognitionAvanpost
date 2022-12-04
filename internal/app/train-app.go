@@ -4,18 +4,21 @@ import (
 	"context"
 	"fingerprintRecognitionAvanpost/internal/file"
 	"fingerprintRecognitionAvanpost/internal/preprocess"
+	"fingerprintRecognitionAvanpost/pkg/logger"
 	"golang.org/x/sync/errgroup"
 	"image"
 	"sync"
 )
 
 const WorkersCnt = 4
-const FileNamesChannelBufferSize = 10
-const ImagesChannelBufferSize = 100
-const PreprocessedChannelBufferSize = 6000
+const FileNamesChannelBufferSize = 20
+const ImagesChannelBufferSize = 20
+const PreprocessedChannelBufferSize = 20
 
 func RunTrain(ctx context.Context, erg *errgroup.Group) error {
-	fileRoot := "files/train/SOCOFing/OneImage/"
+	//fileRoot := "files/train/SOCOFing/OneImage/"
+	fileRoot := "files/train/SOCOFing/OneImageTwo/"
+
 	//fileRoot := "files/train/SOCOFing/TenPeople/"
 	//fileRoot := "files/train/SOCOFing/Real/"
 	//fileRoot := "files/train/SOCOFing/Altered/Altered-Hard/"
@@ -28,20 +31,25 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) error {
 	fileWorker := file.NewBmpWorker(fileRoot)
 	erg.Go(func() error {
 		err := fileWorker.ExtractFilePaths(ctx, fileNamesChannels, WorkersCnt)
+		logger.Info(ctx).Msg("Done extracting file paths")
 		for i := range fileNamesChannels {
+			logger.Info(ctx).Msgf("Closing channel fileNamesChannels[%d]", i)
 			close(fileNamesChannels[i])
 		}
 		return err
 	})
 
-	imagesChannel := make(chan image.Image, ImagesChannelBufferSize)
+	imagesChannel := make(chan *image.Gray, ImagesChannelBufferSize)
 	var wg sync.WaitGroup
 	wg.Add(WorkersCnt)
 
 	for j := 0; j < WorkersCnt; j++ {
-		neededChan := fileNamesChannels[j]
+		neededIndex := j
+		neededChan := fileNamesChannels[neededIndex]
+		logger.Info(ctx).Msgf("Launch read images for %d", neededIndex)
 		erg.Go(func() error {
 			err := fileWorker.ReadImages(ctx, neededChan, imagesChannel)
+			logger.Info(ctx).Msgf("Done reading images for %d", neededIndex)
 			wg.Done()
 			return err
 		})
@@ -49,18 +57,16 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) error {
 
 	go func() {
 		wg.Wait()
+		logger.Info(ctx).Msg("Wait done, read all images")
 		close(imagesChannel)
 	}()
 
-	preprocessedChannel := make(chan *preprocess.Bitset, PreprocessedChannelBufferSize)
+	preprocessedChannel := make(chan *preprocess.Data, PreprocessedChannelBufferSize)
 	erg.Go(func() error {
-		defer close(preprocessedChannel)
-		return preprocess.PreprocessImages(ctx, imagesChannel, preprocessedChannel)
+		err := preprocess.PreprocessImages(ctx, imagesChannel, preprocessedChannel)
+		close(preprocessedChannel)
+		logger.Info(ctx).Msg("Done preprocessing images")
+		return err
 	})
-
-	for elem := range preprocessedChannel {
-		elem.Print()
-	}
-
 	return nil
 }

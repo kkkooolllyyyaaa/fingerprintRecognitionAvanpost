@@ -6,20 +6,23 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/image/bmp"
 	"image"
+	"image/draw"
 	"os"
 	"path/filepath"
 	"sync/atomic"
 )
 
 type BmpWorker struct {
-	fileRoot string
-	FilesCnt int32
+	fileRoot      string
+	WalkFilesCnt  int32
+	ReadImagesCnt int32
 }
 
 func NewBmpWorker(fileRoot string) *BmpWorker {
 	return &BmpWorker{
-		fileRoot: fileRoot,
-		FilesCnt: 0,
+		fileRoot:      fileRoot,
+		WalkFilesCnt:  0,
+		ReadImagesCnt: 0,
 	}
 }
 
@@ -33,34 +36,42 @@ func (bw *BmpWorker) ExtractFilePaths(ctx context.Context, fileNames []chan stri
 			return nil
 		}
 
-		atomic.AddInt32(&bw.FilesCnt, 1)
+		atomic.AddInt32(&bw.WalkFilesCnt, 1)
 
 		fileName := info.Name()
 		personIndex := ExtractNumberFromFileName(fileName)
 		calculatedChan := fileNames[personIndex%workersCnt]
 		calculatedChan <- fileName
-		logger.Info(ctx).Msgf("Wrote %s to %d chan, curSize=%d", fileName, personIndex%workersCnt, len(calculatedChan))
+		//logger.Info(ctx).Msgf("Wrote %s to %d chan, curSize=%d", fileName, personIndex%workersCnt, len(calculatedChan))
 		return nil
 	})
 
 	return filePathErr
 }
 
-func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- image.Image) error {
+func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- *image.Gray) error {
 	for {
 		select {
 
-		case fileName := <-fileNamesChan:
+		case fileName, ok := <-fileNamesChan:
+			if !ok {
+				logger.Warn(ctx).Msg("Stop listening filenames channel")
+				return nil
+			}
+
 			if isBadFilename(fileName) {
 				continue
 			}
 
 			img, err := bw.ExtractImage(fileName)
 			if err != nil {
-				return errors.Wrap(err, "Binarization")
+				return errors.Wrap(err, "Binarization error")
 			}
 
-			logger.Info(ctx).Msgf("Wrote img %s", fileName)
+			//logger.Info(ctx).Msgf("Wrote img %s", fileName)
+
+			atomic.AddInt32(&bw.ReadImagesCnt, 1)
+
 			imagesChan <- img
 
 		case <-ctx.Done():
@@ -71,7 +82,7 @@ func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string
 	}
 }
 
-func (bw *BmpWorker) ExtractImage(path string) (image.Image, error) {
+func (bw *BmpWorker) ExtractImage(path string) (*image.Gray, error) {
 	filePath := bw.fileRoot + path
 
 	file, err := os.Open(filePath)
@@ -84,9 +95,15 @@ func (bw *BmpWorker) ExtractImage(path string) (image.Image, error) {
 		return nil, errors.Wrap(err, "decoding bmp")
 	}
 
+	result := image.NewGray(img.Bounds())
+	draw.Draw(result, result.Bounds(), img, img.Bounds().Min, draw.Src)
+
 	if err = file.Close(); err != nil {
 		return nil, errors.Wrap(err, "File close error")
 	}
 
-	return img, nil
+	return result, nil
 }
+
+//func (bw *BmpWorker) WriteToBmp(bitset *preprocess.Bitset) error {
+//}

@@ -18,6 +18,7 @@ func toBitset(img image.Image) (*Bitset, error) {
 	for i := minY; i < maxY; i++ {
 		for j := minX; j < maxX; j++ {
 			r, g, b := normalizeColor(img.At(j, i))
+
 			bitset.Bin[i][j] = binarizeRgb(r, g, b)
 		}
 	}
@@ -32,8 +33,8 @@ func normalizeColor(c color.Color) (r, g, b uint32) {
 	return r / NormalizeK, g / NormalizeK, b / NormalizeK
 }
 
-const WhiteThreshold = 30
+var WhiteThreshold uint8 = 124
 
 func binarizeRgb(r, g, b uint32) bool {
-	return r <= WhiteThreshold && g <= WhiteThreshold && b <= WhiteThreshold
+	return uint8(r) <= WhiteThreshold && uint8(g) <= WhiteThreshold && uint8(b) <= WhiteThreshold
 }

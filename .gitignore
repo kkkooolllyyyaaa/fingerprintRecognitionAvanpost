@@ -2,3 +2,7 @@
 /data
 /bin
 /files
+/*.bmp
+/*/*.bmp
+/*.ipynb
+/*/*.ipynb
