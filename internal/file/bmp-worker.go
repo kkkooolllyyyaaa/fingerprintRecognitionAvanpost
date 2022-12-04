@@ -2,11 +2,10 @@ package file
 
 import (
 	"context"
+	"fingerprintRecognitionAvanpost/internal/myimage"
 	"fingerprintRecognitionAvanpost/pkg/logger"
 	"github.com/pkg/errors"
 	"golang.org/x/image/bmp"
-	"image"
-	"image/draw"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -20,9 +19,7 @@ type BmpWorker struct {
 
 func NewBmpWorker(fileRoot string) *BmpWorker {
 	return &BmpWorker{
-		fileRoot:      fileRoot,
-		WalkFilesCnt:  0,
-		ReadImagesCnt: 0,
+		fileRoot: fileRoot,
 	}
 }
 
@@ -42,14 +39,13 @@ func (bw *BmpWorker) ExtractFilePaths(ctx context.Context, fileNames []chan stri
 		personIndex := ExtractNumberFromFileName(fileName)
 		calculatedChan := fileNames[personIndex%workersCnt]
 		calculatedChan <- fileName
-		//logger.Info(ctx).Msgf("Wrote %s to %d chan, curSize=%d", fileName, personIndex%workersCnt, len(calculatedChan))
 		return nil
 	})
 
 	return filePathErr
 }
 
-func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- *image.Gray) error {
+func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string, imagesChan chan<- *myimage.MyImage) error {
 	for {
 		select {
 
@@ -68,7 +64,7 @@ func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string
 				return errors.Wrap(err, "Binarization error")
 			}
 
-			//logger.Info(ctx).Msgf("Wrote img %s", fileName)
+			//logger.Info(ctx).Msgf("Wrote Img %s", fileName)
 
 			atomic.AddInt32(&bw.ReadImagesCnt, 1)
 
@@ -82,8 +78,8 @@ func (bw *BmpWorker) ReadImages(ctx context.Context, fileNamesChan <-chan string
 	}
 }
 
-func (bw *BmpWorker) ExtractImage(path string) (*image.Gray, error) {
-	filePath := bw.fileRoot + path
+func (bw *BmpWorker) ExtractImage(filename string) (*myimage.MyImage, error) {
+	filePath := bw.fileRoot + filename
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -95,15 +91,9 @@ func (bw *BmpWorker) ExtractImage(path string) (*image.Gray, error) {
 		return nil, errors.Wrap(err, "decoding bmp")
 	}
 
-	result := image.NewGray(img.Bounds())
-	draw.Draw(result, result.Bounds(), img, img.Bounds().Min, draw.Src)
-
 	if err = file.Close(); err != nil {
 		return nil, errors.Wrap(err, "File close error")
 	}
 
-	return result, nil
+	return myimage.NewMyImage(ToGray(img), filename), nil
 }
-
-//func (bw *BmpWorker) WriteToBmp(bitset *preprocess.Bitset) error {
-//}

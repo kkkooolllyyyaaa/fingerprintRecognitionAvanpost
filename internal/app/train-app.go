@@ -3,10 +3,10 @@ package app
 import (
 	"context"
 	"fingerprintRecognitionAvanpost/internal/file"
+	"fingerprintRecognitionAvanpost/internal/myimage"
 	"fingerprintRecognitionAvanpost/internal/preprocess"
 	"fingerprintRecognitionAvanpost/pkg/logger"
 	"golang.org/x/sync/errgroup"
-	"image"
 	"sync"
 )
 
@@ -15,11 +15,13 @@ const FileNamesChannelBufferSize = 20
 const ImagesChannelBufferSize = 20
 const PreprocessedChannelBufferSize = 20
 
-func RunTrain(ctx context.Context, erg *errgroup.Group) error {
+func RunTrain(ctx context.Context, erg *errgroup.Group) []*preprocess.Data {
 	//fileRoot := "files/train/SOCOFing/OneImage/"
-	fileRoot := "files/train/SOCOFing/OneImageTwo/"
+	//fileRoot := "files/train/SOCOFing/OneImageTwo/"
+	//fileRoot := "files/train/SOCOFing/Blik/"
+	//fileRoot := "files/train/SOCOFing/NoBlik/"
 
-	//fileRoot := "files/train/SOCOFing/TenPeople/"
+	fileRoot := "files/train/SOCOFing/TenPeople/"
 	//fileRoot := "files/train/SOCOFing/Real/"
 	//fileRoot := "files/train/SOCOFing/Altered/Altered-Hard/"
 
@@ -39,7 +41,7 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) error {
 		return err
 	})
 
-	imagesChannel := make(chan *image.Gray, ImagesChannelBufferSize)
+	imagesChannel := make(chan *myimage.MyImage, ImagesChannelBufferSize)
 	var wg sync.WaitGroup
 	wg.Add(WorkersCnt)
 
@@ -68,5 +70,11 @@ func RunTrain(ctx context.Context, erg *errgroup.Group) error {
 		logger.Info(ctx).Msg("Done preprocessing images")
 		return err
 	})
-	return nil
+
+	allData := make([]*preprocess.Data, 0)
+	for oneData := range preprocessedChannel {
+		allData = append(allData, oneData)
+	}
+	logger.Info(ctx).Msg("All data done")
+	return allData
 }

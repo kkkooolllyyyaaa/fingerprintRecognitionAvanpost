@@ -3,32 +3,26 @@ package app
 import (
 	"context"
 	"fingerprintRecognitionAvanpost/internal/algorithm"
-	"fingerprintRecognitionAvanpost/internal/file"
+	"fingerprintRecognitionAvanpost/internal/preprocess"
 	"fingerprintRecognitionAvanpost/internal/route"
+	"fingerprintRecognitionAvanpost/pkg/logger"
 	helmet "github.com/danielkov/gin-helmet"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 	"net/http"
 )
 
-func RunTest(ctx context.Context, erg *errgroup.Group, server *http.Server) error {
-	fileRoot := "files/preprocessed/SOCOFing/Real/"
-
-	dataWorker := file.NewDataWorker(fileRoot)
-	data, err := dataWorker.InitByReadingAll()
-	if err != nil {
-		return errors.Wrap(err, "Error while init by reading all")
-	}
-
+func RunTest(ctx context.Context, erg *errgroup.Group, server *http.Server, data []*preprocess.Data) error {
 	alg := algorithm.NewKeyPointsAlgorithm(data)
 
+	logger.Info(ctx).Msg("Setuping routers...")
 	router := SetupRouter(alg)
 	server.Handler = router.Handler()
 
+	logger.Info(ctx).Msg("Listening http connects...")
 	erg.Go(func() error {
 		return server.ListenAndServe()
 	})

@@ -11,12 +11,6 @@ type Responses struct {
 	Data       interface{} `json:"data"`
 }
 
-type ErrorResponse struct {
-	StatusCode int         `json:"statusCode"`
-	Method     string      `json:"method"`
-	Error      interface{} `json:"error"`
-}
-
 func APIResponse(ctx *gin.Context, Message string, StatusCode int, Method string, Data interface{}) {
 
 	jsonResponse := Responses{
@@ -32,15 +26,4 @@ func APIResponse(ctx *gin.Context, Message string, StatusCode int, Method string
 	} else {
 		ctx.JSON(StatusCode, jsonResponse)
 	}
-}
-
-func ValidatorErrorResponse(ctx *gin.Context, StatusCode int, Method string, Error interface{}) {
-	errResponse := ErrorResponse{
-		StatusCode: StatusCode,
-		Method:     Method,
-		Error:      Error,
-	}
-
-	ctx.JSON(StatusCode, errResponse)
-	defer ctx.AbortWithStatus(StatusCode)
 }

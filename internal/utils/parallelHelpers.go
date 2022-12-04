@@ -7,9 +7,6 @@ import (
 	"sync"
 )
 
-// ParallelForEachPixel loops through the image and calls f functions for each [x, y] position.
-// The image is divided into N * N blocks, where N is the number of available processor threads. For each block a
-// parallel Goroutine is started.
 func ParallelForEachPixel(size image.Point, f func(x int, y int)) {
 	procs := runtime.GOMAXPROCS(0)
 	var waitGroup sync.WaitGroup

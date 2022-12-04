@@ -1,10 +1,5 @@
 package services
 
-func KeyPointsCount(bin [][]bool) map[int]int {
-	mp := make(map[int]int, 0)
-	return mp
-}
-
 func Skeleton(bin [][]bool) {
 	temp := bin
 	count := 1

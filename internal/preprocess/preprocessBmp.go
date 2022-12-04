@@ -2,6 +2,7 @@ package preprocess
 
 import (
 	"context"
+	"fingerprintRecognitionAvanpost/internal/myimage"
 	"fingerprintRecognitionAvanpost/internal/services"
 	"fingerprintRecognitionAvanpost/internal/threshold"
 	"fingerprintRecognitionAvanpost/pkg/logger"
@@ -11,7 +12,7 @@ import (
 	"os"
 )
 
-func PreprocessImages(ctx context.Context, images chan *image.Gray, datas chan *Data) error {
+func PreprocessImages(ctx context.Context, images chan *myimage.MyImage, datas chan *Data) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -35,22 +36,23 @@ func PreprocessImages(ctx context.Context, images chan *image.Gray, datas chan *
 	}
 }
 
-func PreprocessOne(ctx context.Context, img *image.Gray) (*Data, error) {
-	WhiteThreshold = threshold.OtsuThresholdValue(img)
-	img, err := threshold.OtsuThreshold(img, threshold.ThreshBinary)
-	bitset, err := toBitset(img)
+func PreprocessOne(ctx context.Context, img *myimage.MyImage) (*Data, error) {
+	WhiteThreshold = threshold.OtsuThresholdValue(img.Img)
+	temp, err := threshold.OtsuThreshold(img.Img, threshold.ThreshBinary)
+	img.Img = temp
+	bitset, err := toBitset(img.Img)
 	if err != nil {
 		logger.Error(ctx).Err(err).Msg("Got error while converting to bitset")
 		return nil, errors.Wrap(err, "toBitset")
 	}
-	_ = WriteBmp(bitset, "before.bmp")
+	//_ = WriteBmp(bitset, "before-no-blik.bmp")
 
 	services.Skeleton(bitset.Bin)
-	_ = WriteBmp(bitset, "after.bmp")
+	//_ = WriteBmp(bitset, "after-no-blik.bmp")
 
-	counted := services.KeyPointsCount(bitset.Bin)
+	counted, _ := services.DefineDots(bitset.Bin)
 
-	return NewData(counted), nil
+	return NewData(counted, img.Filename), nil
 }
 
 func WriteBmp(img image.Image, filename string) error {

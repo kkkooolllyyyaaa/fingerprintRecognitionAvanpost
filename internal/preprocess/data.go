@@ -1,12 +1,13 @@
 package preprocess
 
 type Data struct {
-	bin       [][]bool
-	keyPoints map[int]int
+	Filename  string
+	KeyPoints map[int]int
 }
 
-func NewData(keyPoints map[int]int) *Data {
+func NewData(keyPoints map[int]int, filename string) *Data {
 	return &Data{
-		keyPoints: keyPoints,
+		KeyPoints: keyPoints,
+		Filename:  filename,
 	}
 }
