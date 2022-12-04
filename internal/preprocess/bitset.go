@@ -25,6 +25,41 @@ func NewZeroes(height, width int) *Bitset {
 	}
 }
 
+func (b *Bitset) Print() {
+	for i := 0; i < b.H; i++ {
+		for j := 0; j < b.W; j++ {
+			if b.Bin[i][j] {
+				fmt.Print(".")
+			} else {
+				fmt.Print(" ")
+			}
+		}
+		fmt.Println()
+	}
+}
+
+func (b *Bitset) PrintWithDots(dots [][]int) {
+	for i := 0; i < b.H; i++ {
+		for j := 0; j < b.W; j++ {
+			if b.Bin[i][j] {
+
+				isDot := false
+				for k := 0; k < len(dots[0]); k++ {
+					if dots[0][k] == i && dots[1][k] == j {
+						isDot = true
+						break
+					}
+				}
+				if isDot {
+					fmt.Print("*")
+				} else {
+					fmt.Print(".")
+				}
+			}
+		}
+	}
+}
+
 type BlackWhiteColor struct {
 	isBlack bool
 }
@@ -59,18 +94,5 @@ func (bitset *Bitset) Bounds() image.Rectangle {
 func (bitset *Bitset) At(x, y int) color.Color {
 	return &BlackWhiteColor{
 		isBlack: bitset.Bin[y][x],
-	}
-}
-
-func (bitset *Bitset) Print() {
-	for i := 0; i < bitset.H; i++ {
-		for j := 0; j < bitset.W; j++ {
-			if bitset.Bin[i][j] {
-				fmt.Print("*")
-			} else {
-				fmt.Print(" ")
-			}
-		}
-		fmt.Println()
 	}
 }
