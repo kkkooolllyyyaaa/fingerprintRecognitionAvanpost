@@ -1,13 +1,18 @@
 package services
 
+func KeyPointsCount(bin [][]bool) map[int]int {
+	mp := make(map[int]int, 0)
+	return mp
+}
+
 func Skeleton(bin [][]bool) {
 	temp := bin
-	count := 0
+	count := 1
 
-	count = step(1, temp, bin)
-	temp = bin
-	count += step(2, temp, bin)
-	temp = bin
+	//count = step(1, temp, bin)
+	//temp = bin
+	//count += step(2, temp, bin)
+	//temp = bin
 	for count > 0 {
 		count = step(1, temp, bin)
 		temp = bin
@@ -113,4 +118,26 @@ func Btoi(val bool) int {
 		return 1
 	}
 	return 0
+}
+
+func HashCode(bin [][]bool, i, j int) int {
+	Btoi := func(bl bool) int {
+		if bl {
+			return 1
+		}
+		return 0
+	}
+
+	hash := 0
+	hash += 128 * Btoi(bin[i-1][j-1])
+	hash += 64 * Btoi(bin[i-1][j])
+	hash += 32 * Btoi(bin[i-1][j+1])
+
+	hash += 16 * Btoi(bin[i][j-1])
+	hash += 8 * Btoi(bin[i][j+1])
+
+	hash += 4 * Btoi(bin[i+1][j-1])
+	hash += 2 * Btoi(bin[i+1][j])
+	hash += 1 * Btoi(bin[i+1][j+1])
+	return hash
 }
