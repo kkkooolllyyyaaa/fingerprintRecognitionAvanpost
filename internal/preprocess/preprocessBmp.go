@@ -21,12 +21,15 @@ func PreprocessImages(ctx context.Context, images chan image.Image, bitsets chan
 				return ctx.Err()
 			default:
 				bitset, err := toBitset(img)
-				bitset.Print()
+				//bitset.Print()
 				if err != nil {
 					logger.Error(ctx).Err(err).Msg("Got error while converting to bitset")
 					return errors.Wrap(err, "toBitset")
 				}
 				services.Skeleton(bitset.Bin)
+
+				_, dots := services.DefineDots(bitset.Bin)
+				bitset.PrintWithDots(dots)
 
 				logger.Info(ctx).Msg("Converted img to bitset")
 				bitsets <- bitset
