@@ -14,13 +14,13 @@
 4. `docker run -p 8080:8080 solve`
 
 ## Api:
-### `POST /api/predict`
+### POST /api/predict
 ```
 curl --location --request POST 'http://localhost:8080/api/predict' \
 --form 'image=@"<filepath>"'
 ```
 
-### `Response`
+### Response
 ```
 {
     "statusCode": 200,
