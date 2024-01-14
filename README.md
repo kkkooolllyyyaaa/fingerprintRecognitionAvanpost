@@ -8,15 +8,13 @@
 
 ## Как запустить:
 
-```
-    git clone https://github.com/kkkooolllyyyaaa/fingerprintRecognitionAvanpost.git
-    <Загрузить тренировочные и тестовые данные>
-    docker build -t "solve" .
-    docker run -p 8080:8080 solve
-```
+1. `git clone https://github.com/kkkooolllyyyaaa/fingerprintRecognitionAvanpost.git`
+2. Загрузить тренировочные и тестовые данные
+3. `docker build -t "solve" .`
+4. `docker run -p 8080:8080 solve`
 
 ## Api:
-### `Post /api/predict`
+### `POST /api/predict`
 ```
 curl --location --request POST 'http://localhost:8080/api/predict' \
 --form 'image=@"<filepath>"'
@@ -29,7 +27,7 @@ curl --location --request POST 'http://localhost:8080/api/predict' \
     "method": "POST",
     "message": "Success",
     "data": {
-        "person_index": "1__M_Left_index_finger.BMP"
+        "person_index": "1__M_Left_index_finger"
     }
 }
 ```
@@ -37,14 +35,8 @@ curl --location --request POST 'http://localhost:8080/api/predict' \
 ### Пример из Postman
 ![img.png](img.png)
 
-## Решение:
-Архитектура, описание решения и алгоритм Coming soon
-
 ## Результат на тестовых данных:
-
-```
-    easy-accuracy: 0.98
-    medium-accuracy: 0.85
-    hard-accuracy: 0.70
-    test-accuracy: 0.65 (пока)
-```
+* easy-accuracy: 0.98
+* medium-accuracy: 0.85
+* hard-accuracy: 0.70
+* test-accuracy: 0.84
